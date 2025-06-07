@@ -1,22 +1,21 @@
-#include <stdio.h>
+#include <iostream>
 #include "include/msquic/msquic.h"
-
-const QUIC_API_TABLE* MsQuic;
-HQUIC Registration;
+#include "include/globalVar.cpp"
 
 QUIC_STATUS QUIC_API MyListenerCallback(HQUIC /*Listener*/,void* /*Context*/, QUIC_LISTENER_EVENT* Event) 
 {
     if (Event->Type == QUIC_LISTENER_EVENT_NEW_CONNECTION) {
-        printf(">> nhận kết nối mới!\n");
-
-        return QUIC_STATUS_ABORTED;
+        Log(">> nhận kết nối mới!\n");
+        HQUIC connection = Event->NEW_CONNECTION.Connection;
+        
     }
     return QUIC_STATUS_SUCCESS;
 }
 int main() {
-    if (QUIC_FAILED(MsQuicOpen2(&MsQuic)))
+    appName = "server";
+    if (QUIC_FAILED(MsQuicOpen2(&msQuic_Open_instance)))
     {
-        printf("Fail to open quic");
+        Log("Fail to open quic");
         return 0;
     }
 
@@ -24,9 +23,9 @@ int main() {
     QUIC_REGISTRATION_CONFIG* regConf = new QUIC_REGISTRATION_CONFIG();
     regConf->AppName = NULL;
     regConf->ExecutionProfile = (QUIC_EXECUTION_PROFILE)0;
-    if (QUIC_FAILED(MsQuic->RegistrationOpen(regConf,&Registration)))
+    if (QUIC_FAILED(msQuic_Open_instance->RegistrationOpen(regConf,&Register_instance)))
     {
-        printf("fail to register quic");
+        Log("fail to register quic");
         return 0;
     }
 
@@ -34,9 +33,9 @@ int main() {
  
     HQUIC Listener;
     
-    if (QUIC_FAILED(MsQuic->ListenerOpen(Registration,MyListenerCallback,nullptr,&Listener)))
+    if (QUIC_FAILED(msQuic_Open_instance->ListenerOpen(Register_instance,MyListenerCallback,nullptr,&Listener)))
     {
-        printf("fail to open listener");
+        Log("fail to open listener");
         return 0;
     };
 
@@ -53,11 +52,11 @@ int main() {
     buffer.Length = strlen(Alpn);
     buffer.Buffer = (uint8_t*)Alpn;
 
-   if (QUIC_FAILED(MsQuic->ListenerStart(Listener,&buffer,1,&addrInfo)))
+   if (QUIC_FAILED(msQuic_Open_instance->ListenerStart(Listener,&buffer,1,&addrInfo)))
    {
-        printf("listener Start fail");
+        Log("listener Start fail");
         return 0;
    };
-    MsQuic->RegistrationClose(Registration);
-    MsQuicClose(MsQuic);
+    msQuic_Open_instance->RegistrationClose(Register_instance);
+    MsQuicClose(msQuic_Open_instance);
 }
